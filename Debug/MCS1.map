@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Mon Nov  3 12:27:30 2025
+>> Linked Mon Nov  3 16:28:45 2025
 
 OUTPUT FILE NAME:   <MCS1.out>
 ENTRY POINT SYMBOL: "_c_int00_noinit_noargs"  address: 0000c626
@@ -106,14 +106,14 @@ section   page    origin      length       input sections
 .mspabi.extab 
 *          0    0000c200    00000000     UNINITIALIZED
 
-.const     0    0000c200    0000003c     
-                  0000c200    0000000e     TA0.obj (.const:muster6$0)
-                  0000c20e    0000000c     TA0.obj (.const:blinkmuster$0)
-                  0000c21a    0000000a     TA0.obj (.const:muster5$0)
-                  0000c224    00000006     TA0.obj (.const:muster1$0)
-                  0000c22a    00000006     TA0.obj (.const:muster2$0)
-                  0000c230    00000006     TA0.obj (.const:muster3$0)
-                  0000c236    00000006     TA0.obj (.const:muster4$0)
+.const     0    0000c200    00000042     
+                  0000c200    00000010     TA0.obj (.const:muster6$0)
+                  0000c210    0000000c     TA0.obj (.const:blinkmuster$0)
+                  0000c21c    0000000c     TA0.obj (.const:muster5$0)
+                  0000c228    00000008     TA0.obj (.const:muster4$0)
+                  0000c230    00000006     TA0.obj (.const:muster1$0)
+                  0000c236    00000006     TA0.obj (.const:muster2$0)
+                  0000c23c    00000006     TA0.obj (.const:muster3$0)
 
 .text      0    0000c400    00000252     
                   0000c400    00000162     main.obj (.text:main)
@@ -235,14 +235,14 @@ MODULE SUMMARY
        ------                                   ----   -------   -------
     .\Sources\
        main.obj                                 364    0         0      
-       TA0.obj                                  76     60        8      
+       TA0.obj                                  76     66        8      
        TA1.obj                                  120    0         10     
        event.obj                                0      0         6      
     +--+----------------------------------------+------+---------+---------+
-       Total:                                   560    60        24     
+       Total:                                   560    66        24     
                                                                         
     C:\Users\annaz\AppData\Local\Temp\
-       {D9C7789A-C4D4-4808-B7C7-6B1CBB1CAA2E}   0      4         0      
+       {0F6AF107-D969-454B-9E3A-BA6029F6BA5F}   0      4         0      
     +--+----------------------------------------+------+---------+---------+
        Total:                                   0      4         0      
                                                                         
@@ -277,7 +277,7 @@ MODULE SUMMARY
                                                                         
        Stack:                                   0      0         80     
     +--+----------------------------------------+------+---------+---------+
-       Grand Total:                             594    110       104    
+       Grand Total:                             594    116       104    
 
 
 GLOBAL SYMBOLS: SORTED ALPHABETICALLY BY Name 

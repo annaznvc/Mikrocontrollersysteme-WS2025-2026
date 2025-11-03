@@ -2,14 +2,14 @@
 #include "..\base.h"
 #include "TA0.h"
 
-#define ACKFRQ 30.6875  // kHz (nach Teilung)
+#define ACKFRQ 613.75
 #define HIGH 0x8000
 #define LOW  0x0000
 
 // Makro zur Berechnung der Timer-Ticks
-#define TICK(t) ((UInt)(ACKFRQ * (t)) - 1)
+#define TICK(t) ((UInt)(((ACKFRQ * t) / 4.0) / 7.0) - 1)
 
-// Blinkmuster-Definitionen als ROM-Tabellen
+// Blinkmuster-Definitionen als Tabellen
 LOCAL const UInt muster1[] = {
    HIGH | TICK(2000),   LOW | TICK(500),   0
 };
@@ -40,12 +40,12 @@ LOCAL const UInt muster6[] = {
    LOW | TICK(1500), 0
 };
 
-// Lookup-Tabelle mit Pointern auf Muster
+//Tabelle mit Pointern auf Muster
 LOCAL const UInt * const blinkmuster[] = {
    muster1, muster2, muster3, muster4, muster5, muster6
 };
 
-// Globale Variablen für ISR - minimal!
+// Globale Variablen für ISR
 LOCAL struct {
    UInt *ptr;                 // Pointer auf aktuelle Phase
    UInt *start;               // Pointer auf Musteranfang
@@ -61,14 +61,23 @@ GLOBAL inline Void TA0_init(Void) {
    st.next_start = NULL;
    st.change_pending = FALSE;
 
+   /*
+    * Die längste High/Low Phase dauert 2 s
+    * Timer Clock ist 613,75 kHz
+    * Teilungsfaktor: 613750Hz * 2s = 1227500
+    * Skal.faktor = 1227500 * 2^16 = 18,73 = 19
+    * {/4}, {/5}
+    * 4*5 = 20, yo passt
+    *
+    * */
    TA0CTL   = 0; // stop mode, disable and clear flags
    TA0CCTL0 = 0; // no capture mode, compare mode
                  // clear and disable interrupt flag
-   TA0CCR0  = 0xFFFF;       // set up Compare Register
-   TA0EX0   = TAIDEX_0;     // set up expansion register
+   TA0CCR0  = 0xFFFF;       // set up Compare Register (zu bestimmen????)
+   TA0EX0   = TAIDEX_4;     // set up expansion register (zu berechnen) -> 5
    TA0CTL   = TASSEL__ACLK  // 613.75 kHz
             | MC__UP        // Up Mode
-            | ID__1         // input divider
+            | ID_2       // input divider (zu berechnen) -> 4
             | TACLR         // clear and start Timer
             | TAIE          // enable interrupt
             | TAIFG;        // set interrupt flag
