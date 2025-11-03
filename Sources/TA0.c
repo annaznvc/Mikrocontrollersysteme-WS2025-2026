@@ -2,10 +2,6 @@
 #include "..\base.h"
 #include "TA0.h"
 
-// Timer-Clock = 613.75 kHz (ACLK von XT1CLK 4.91 MHz / 8)
-// ID = /4, IDEX = /5 => effektive Teilung /20
-// Effektive Timer-Frequenz = 30.6875 kHz
-
 #define ACKFRQ 30.6875  // kHz (nach Teilung)
 #define HIGH 0x8000
 #define LOW  0x0000
@@ -15,30 +11,33 @@
 
 // Blinkmuster-Definitionen als ROM-Tabellen
 LOCAL const UInt muster1[] = {
-   HIGH | TICK(500),   LOW | TICK(500),   0
+   HIGH | TICK(2000),   LOW | TICK(500),   0
 };
 
 LOCAL const UInt muster2[] = {
-   HIGH | TICK(1000),  LOW | TICK(1000),  0
+   HIGH | TICK(750),  LOW | TICK(750),  0
 };
 
 LOCAL const UInt muster3[] = {
-   HIGH | TICK(200),   LOW | TICK(200),   0
+   HIGH | TICK(250),   LOW | TICK(250),   0
 };
 
 LOCAL const UInt muster4[] = {
-   HIGH | TICK(500),   LOW | TICK(1500),  0
+   LOW | TICK(500),   HIGH | TICK(500),
+   LOW | TICK(1500), 0
 };
 
 LOCAL const UInt muster5[] = {
-   HIGH | TICK(500),   LOW | TICK(500),
-   HIGH | TICK(500),   LOW | TICK(2000),  0
+   LOW | TICK(500),   HIGH | TICK(500),
+   LOW | TICK(500),   HIGH | TICK(500),
+   LOW | TICK(1500), 0
 };
 
 LOCAL const UInt muster6[] = {
-   HIGH | TICK(500),   LOW | TICK(500),
-   HIGH | TICK(500),   LOW | TICK(500),
-   HIGH | TICK(500),   LOW | TICK(1500),  0
+   LOW | TICK(500),   HIGH | TICK(500),
+   LOW | TICK(500),   HIGH | TICK(500),
+   LOW | TICK(500),   HIGH | TICK(500),
+   LOW | TICK(1500), 0
 };
 
 // Lookup-Tabelle mit Pointern auf Muster
@@ -46,11 +45,11 @@ LOCAL const UInt * const blinkmuster[] = {
    muster1, muster2, muster3, muster4, muster5, muster6
 };
 
-// Globale Variablen für ISR - minimal!
+// Globale Variablen fÃ¼r ISR - minimal!
 LOCAL struct {
    UInt *ptr;                 // Pointer auf aktuelle Phase
    UInt *start;               // Pointer auf Musteranfang
-   UInt *next_start;          // Nächstes Muster
+   UInt *next_start;          // NÃ¤chstes Muster
    Bool change_pending;       // Musterwechsel angefordert
 } st;
 
@@ -62,20 +61,28 @@ GLOBAL inline Void TA0_init(Void) {
    st.next_start = NULL;
    st.change_pending = FALSE;
 
-   TA0CTL = 0;
-   TA0CCTL0 = 0;
-   TA0CCR0 = 0;
-   TA0EX0 = TAIDEX_4;        // /5
-   TA0CTL = TASSEL__ACLK     // 613.75 kHz
-          | MC__UP
-          | ID__4            // /4
-          | TACLR
-          | TAIE
-          | TAIFG;
+   TA0CTL   = 0; // stop mode, disable and clear flags
+   TA0CCTL0 = 0; // no capture mode, compare mode
+                 // clear and disable interrupt flag
+   TA0CCR0  = 0xFFFF;       // set up Compare Register
+   TA0EX0   = TAIDEX_0;     // set up expansion register
+   TA0CTL   = TASSEL__ACLK  // 613.75 kHz
+            | MC__UP        // Up Mode
+            | ID__1         // input divider
+            | TACLR         // clear and start Timer
+            | TAIE          // enable interrupt
+            | TAIFG;        // set interrupt flag
+}
 }
 
 
 GLOBAL Void set_blink_muster(UInt muster_nr) {
+    /*
+     * Die Funktion muss so erweitert werden,
+     * dass ein Blinkmuster selektiert wird.
+     * Diese Lï¿½sung hï¿½ngt stark von der gewï¿½hlten
+     * Datenstruktur ab.
+     */
    const UInt * const *ptr_to_muster = blinkmuster;
 
    if (muster_nr LE MUSTER6) {
@@ -92,7 +99,7 @@ __interrupt Void TIMER0_A1_ISR(Void) {
 
    CLRBIT(TA0CTL, TAIFG);
 
-   // Prüfe Ende des Musters
+   // PrÃ¼fe Ende des Musters
    if (*st.ptr EQ 0) {
       // Periode zu Ende
       if (st.change_pending) {
@@ -102,7 +109,7 @@ __interrupt Void TIMER0_A1_ISR(Void) {
       st.ptr = st.start;
    }
 
-   // Lade nächste Phase
+   // Lade nÃ¤chste Phase
    cnt = *st.ptr++;
 
    // Setze LED entsprechend HIGH/LOW
