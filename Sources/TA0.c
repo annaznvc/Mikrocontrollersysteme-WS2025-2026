@@ -73,7 +73,7 @@ GLOBAL inline Void TA0_init(Void) {
             | TAIE          // enable interrupt
             | TAIFG;        // set interrupt flag
 }
-}
+
 
 
 GLOBAL Void set_blink_muster(UInt muster_nr) {
