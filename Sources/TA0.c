@@ -68,7 +68,7 @@ GLOBAL inline Void TA0_init(Void) {
     * Teilungsfaktor: 613750Hz * 2s = 1227500
     * Skal.faktor = 1227500 * 2^16 = 18,73 = 19
     * {/4}, {/5}
-    * 4*5 = 20, yo passt
+    * 4*5 = 20
     *
     *Zweiter Ansatz:
     *Die längste High/Low Phase dauert 2 s
@@ -80,7 +80,7 @@ GLOBAL inline Void TA0_init(Void) {
    TA0CTL   = 0; // stop mode, disable and clear flags
    TA0CCTL0 = 0; // no capture mode, compare mode
                  // clear and disable interrupt flag
-   TA0CCR0  = 0xFFFF;       // set up Compare Register (zu bestimmen????)
+   TA0CCR0  = 0xFFFF;       // set up Compare Register
    TA0EX0   = TAIDEX_4;     // set up expansion register (zu berechnen) -> 5
    TA0CTL   = TASSEL__ACLK  // 613.75 kHz
             | MC__UP        // Up Mode
@@ -115,25 +115,25 @@ __interrupt Void TIMER0_A1_ISR(Void) {
 
    CLRBIT(TA0CTL, TAIFG);
 
-   // Prüfe Ende des Musters
+   //Prüfe Ende des Musters
    if (*st.ptr EQ 0) {
-      // Periode zu Ende
+      //Periode zu Ende
       if (st.change_pending) {
          st.start = st.next_start;
-         st.change_pending = FALSE;
+         st.change_pending = FALSE; //Wir setzen change penging wieder auf false, weil es erst wieder true wird, wenn wir btn2 drücken und nen wechselwunsch ahben
       }
       st.ptr = st.start;
    }
 
-   // Lade nächste Phase
+   //Lade nächste Phase
    cnt = *st.ptr++;
 
-   // Setze LED entsprechend HIGH/LOW
+   //Setze LED entsprechend HIGH/LOW
    if (TSTBIT(cnt, HIGH)) {
-      SETBIT(P1OUT, BIT2);
-      cnt = cnt BAND (BNOT HIGH);  // HIGH-Bit maskieren
+      SETBIT(P1OUT, BIT2); //Ausgangsport auf logisch 1
+      cnt = cnt BAND (BNOT HIGH);  //HIGH-Bit maskieren
    } else {
-      CLRBIT(P1OUT, BIT2);
+      CLRBIT(P1OUT, BIT2); //Ausgangsport auf logisch 0
    }
 
    TA0CCR0 = cnt;

@@ -3,9 +3,20 @@
 #include "TA1.h"
 #include "event.h"
 
-// Timer-Clock = 613.75 kHz, ID = /1, IDEX = /1
+// Timer-Clock = 613.75 kHz
+// Aus der
 // Zeitspanne = 3.3 ms
 // CCR0 = 2025
+
+
+
+//Aus der Vorlesung:
+// Zeitspanne = 3.3 ms
+// Timer-Clock = 613.75 kHz
+// Teilungsfaktor = Timer-Clock * Zeitspanne = 2025.375
+// 16 Bit-Timer: Max. Schritte 2^16
+// Skalierungsfaktor = 2025.375 / 2^16 = 0.0309 => 1 = {/1} {/1}
+// Einstellung CCR0 = 2025.375 / 1 = 2025-1
 
 #define CNTMAX 6  // Max. Wert für die Hysterese
 
@@ -26,7 +37,7 @@ LOCAL struct {
 // Konfiguration für BTN1
 LOCAL const struct {
    const UChar * const port;
-   const UChar mask;
+   const UChar mask; //welches bit in P1IN gehört zu dem button
    const TEvent msg;
 } btn1 = {(UChar *)(&P1IN), BIT0, EVENT_BTN1};
 
@@ -78,13 +89,13 @@ __interrupt Void TIMER1_A1_ISR(Void) {
       State = &var1.state;
       Taste = TSTBIT(P1IN, BIT0);
       msg = EVENT_BTN1;
-      check_btn1 = FALSE;
+      check_btn1 = FALSE; //nächstes mal BTN 2 prüfen
    } else {
       Cnt = &var2.cnt;
       State = &var2.state;
       Taste = TSTBIT(P1IN, BIT1);
       msg = EVENT_BTN2;
-      check_btn1 = TRUE;
+      check_btn1 = TRUE; //Nächstes mal BTN 1 prüfen
    }
 
    // Entprellungslogik wie in der Vorlesung
