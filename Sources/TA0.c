@@ -7,7 +7,7 @@
 #define LOW  0x0000
 
 // Makro zur Berechnung der Timer-Ticks
-#define TICK(t) ((UInt)(((ACKFRQ * t) / 4.0) / 7.0) - 1)
+#define TICK(t) ((UInt)(((ACKFRQ * t) / 4.0) / 5.0) - 1)
 
 // Blinkmuster-Definitionen als Tabellen
 LOCAL const UInt muster1[] = {
