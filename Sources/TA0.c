@@ -6,8 +6,8 @@
 #define HIGH 0x8000
 #define LOW  0x0000
 
-// Makro zur Berechnung der Timer-Ticks
-#define TICK(t) ((UInt)(((ACKFRQ * t) / 4.0) / 5.0) - 1)
+// Makro zur Berechnung der Timer-Ticks (Ansatz aus der Folie mit ID und TAIDEX
+#define TICK(t) ((UInt)(((ACKFRQ * t) / 8.0) / 5.0) - 1)
 
 // Blinkmuster-Definitionen als Tabellen
 LOCAL const UInt muster1[] = {
@@ -62,6 +62,7 @@ GLOBAL inline Void TA0_init(Void) {
    st.change_pending = FALSE;
 
    /*
+    * Erster Ansatz:
     * Die längste High/Low Phase dauert 2 s
     * Timer Clock ist 613,75 kHz
     * Teilungsfaktor: 613750Hz * 2s = 1227500
@@ -69,6 +70,12 @@ GLOBAL inline Void TA0_init(Void) {
     * {/4}, {/5}
     * 4*5 = 20, yo passt
     *
+    *Zweiter Ansatz:
+    *Die längste High/Low Phase dauert 2 s
+    *Timer Clock ist 613,75 kHz
+    *Teilungsfaktor: 613750Hz * 2s = 1227500
+    *Skal.faktor = 1227500 * 2^15 = 37,46003 = 38
+    *{/5 TAIDEX}, {/8 ID}
     * */
    TA0CTL   = 0; // stop mode, disable and clear flags
    TA0CCTL0 = 0; // no capture mode, compare mode
@@ -77,7 +84,7 @@ GLOBAL inline Void TA0_init(Void) {
    TA0EX0   = TAIDEX_4;     // set up expansion register (zu berechnen) -> 5
    TA0CTL   = TASSEL__ACLK  // 613.75 kHz
             | MC__UP        // Up Mode
-            | ID_2       // input divider (zu berechnen) -> 4
+            | ID_3       // input divider (zu berechnen) -> 4
             | TACLR         // clear and start Timer
             | TAIE          // enable interrupt
             | TAIFG;        // set interrupt flag
