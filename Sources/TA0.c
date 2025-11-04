@@ -9,7 +9,7 @@
 // Makro zur Berechnung der Timer-Ticks (Ansatz aus der Folie mit ID und TAIDEX
 #define TICK(t) ((UInt)(((ACKFRQ * t) / 8.0) / 5.0) - 1)
 
-// Blinkmuster-Definitionen als Tabellen
+// Blinkmusterdefinitionen als Tabellen
 LOCAL const UInt muster1[] = {
    HIGH | TICK(2000),   LOW | TICK(500),   0
 };
@@ -40,24 +40,24 @@ LOCAL const UInt muster6[] = {
    LOW | TICK(1500), 0
 };
 
-//Tabelle mit Pointern auf Muster
+//Quasi array von Zeigern auf Arrays
 LOCAL const UInt * const blinkmuster[] = {
    muster1, muster2, muster3, muster4, muster5, muster6
 };
 
 // Globale Variablen für ISR
 LOCAL struct {
-   UInt *ptr;                 // Pointer auf aktuelle Phase
-   UInt *start;               // Pointer auf Musteranfang
-   UInt *next_start;          // Nächstes Muster
-   Bool change_pending;       // Musterwechsel angefordert
+   UInt *ptr;                 //Pointer auf aktuelle Phase
+   UInt *start;               //Pointer auf Musteranfang
+   UInt *next_start;          //Nächstes Muster
+   Bool change_pending;       //Musterwechsel angefordert
 } st;
 
 
 #pragma FUNC_ALWAYS_INLINE(TA0_init)
 GLOBAL inline Void TA0_init(Void) {
    st.start = (UInt *)blinkmuster[MUSTER1];
-   st.ptr = st.start;
+   st.ptr = st.start; //aktuelle phase ist der anfang
    st.next_start = NULL;
    st.change_pending = FALSE;
 
@@ -84,7 +84,7 @@ GLOBAL inline Void TA0_init(Void) {
    TA0EX0   = TAIDEX_4;     // set up expansion register (zu berechnen) -> 5
    TA0CTL   = TASSEL__ACLK  // 613.75 kHz
             | MC__UP        // Up Mode
-            | ID_3       // input divider (zu berechnen) -> 4
+            | ID__8       // input divider (zu berechnen)
             | TACLR         // clear and start Timer
             | TAIE          // enable interrupt
             | TAIFG;        // set interrupt flag
@@ -99,10 +99,10 @@ GLOBAL Void set_blink_muster(UInt muster_nr) {
      * Diese L�sung h�ngt stark von der gew�hlten
      * Datenstruktur ab.
      */
-   const UInt * const *ptr_to_muster = blinkmuster;
+   const UInt * const *ptr_to_muster = blinkmuster; //ptr_to_muster zeigt jetzt auf den ersten Eintrag von blinkmuster, also auf muster1
 
    if (muster_nr LE MUSTER6) {
-      ptr_to_muster += muster_nr;
+      ptr_to_muster += muster_nr; //"Inkrementierung" gemäß anzahl knopfdrücke
       st.next_start = (UInt *)*ptr_to_muster;
       st.change_pending = TRUE;
    }

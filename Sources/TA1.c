@@ -4,62 +4,47 @@
 #include "event.h"
 
 // Timer-Clock = 613.75 kHz
-// Aus der
 // Zeitspanne = 3.3 ms
 // CCR0 = 2025
 
-
-
-//Aus der Vorlesung:
-// Zeitspanne = 3.3 ms
-// Timer-Clock = 613.75 kHz
-// Teilungsfaktor = Timer-Clock * Zeitspanne = 2025.375
-// 16 Bit-Timer: Max. Schritte 2^16
-// Skalierungsfaktor = 2025.375 / 2^16 = 0.0309 => 1 = {/1} {/1}
-// Einstellung CCR0 = 2025.375 / 1 = 2025-1
-
-#define CNTMAX 6  // Max. Wert für die Hysterese
+#define CNTMAX 5
+#define NUM_BUTTONS 2
 
 typedef enum {S0, S1} TState;
 
-// Zustandsvariablen für BTN1
-LOCAL struct {
+
+typedef struct {
    Int cnt;
    TState state;
-} var1;
+} TButtonState;
 
-// Zustandsvariablen für BTN2
-LOCAL struct {
-   Int cnt;
-   TState state;
-} var2;
 
-// Konfiguration für BTN1
-LOCAL const struct {
-   const UChar * const port;
-   const UChar mask; //welches bit in P1IN gehört zu dem button
-   const TEvent msg;
-} btn1 = {(UChar *)(&P1IN), BIT0, EVENT_BTN1};
-
-// Konfiguration für BTN2
-LOCAL const struct {
-   const UChar * const port;
+typedef struct {
+   volatile const UChar * const port;
    const UChar mask;
    const TEvent msg;
-} btn2 = {(UChar *)(&P1IN), BIT1, EVENT_BTN2};
+} TButtonConfig;
 
-// Flag für abwechselnde Abfrage
-LOCAL Bool check_btn1;
 
+LOCAL TButtonState button_states[NUM_BUTTONS] = {
+   {0, S0},
+   {0, S0}
+};
+
+LOCAL const TButtonConfig button_configs[NUM_BUTTONS] = {
+   {&P1IN, BIT0, EVENT_BTN1},
+   {&P1IN, BIT1, EVENT_BTN2}
+};
+
+// Pointer auf aktuellen Button
+LOCAL const TButtonConfig *current_config;
+LOCAL TButtonState *current_state;
 
 #pragma FUNC_ALWAYS_INLINE(TA1_init)
 GLOBAL Void TA1_init(Void) {
-   var1.cnt = 0;
-   var1.state = S0;
-   var2.cnt = 0;
-   var2.state = S0;
-
-   check_btn1 = TRUE;
+   //Pointer zeigen ersten Eintrag je array
+   current_config = button_configs;
+   current_state = button_states;
 
    TA1CTL = 0;
    TA1CCTL0 = 0;
@@ -73,47 +58,38 @@ GLOBAL Void TA1_init(Void) {
           | TAIFG;
 }
 
-
 #pragma vector = TIMER1_A1_VECTOR
 __interrupt Void TIMER1_A1_ISR(Void) {
-   Int *Cnt;
-   TState *State;
-   UChar Taste;
-   TEvent msg;
-
    CLRBIT(TA1CTL, TAIFG);
 
-   // Wähle aktuellen Button
-   if (check_btn1) {
-      Cnt = &var1.cnt;
-      State = &var1.state;
-      Taste = TSTBIT(P1IN, BIT0);
-      msg = EVENT_BTN1;
-      check_btn1 = FALSE; //nächstes mal BTN 2 prüfen
+   //invertierte logik, also 0 ist gedrückt und 1 losgelassen
+   Bool pressed = !TSTBIT(*(current_config->port), current_config->mask);
+
+   if (pressed) {
+      current_state->cnt++;
+      if (current_state->cnt GT CNTMAX-1) {
+         current_state->cnt = CNTMAX-1;
+         if (current_state->state EQ S0) {
+            current_state->state = S1;
+            Event_set(current_config->msg);
+            __low_power_mode_off_on_exit();
+         }
+      }
    } else {
-      Cnt = &var2.cnt;
-      State = &var2.state;
-      Taste = TSTBIT(P1IN, BIT1);
-      msg = EVENT_BTN2;
-      check_btn1 = TRUE; //Nächstes mal BTN 1 prüfen
+      current_state->cnt--; //kein Tastendruck erkannt
+      if (current_state->cnt LE 0) {
+         current_state->cnt = 0;
+         current_state->state = S0;
+      }
    }
 
-   // Entprellungslogik wie in der Vorlesung
-   // Ein nicht gedrückter Button ist mit 1 aktiv
-   if (Taste) {
-      if (--(*Cnt) LT 0) {
-         *Cnt = 0;
-         *State = S0;
-      }
-      return;
-   }
+  //nächster button
+   current_config++;
+   current_state++;
 
-   if (++(*Cnt) GT CNTMAX-1) {
-      *Cnt = CNTMAX-1;
-      if (*State EQ S0) {
-         *State = S1;
-         Event_set(msg);
-         __low_power_mode_off_on_exit();
-      }
+
+   if (current_config GE button_configs + NUM_BUTTONS) {
+      current_config = button_configs;  // Zurück zum anfang
+      current_state = button_states;
    }
 }
