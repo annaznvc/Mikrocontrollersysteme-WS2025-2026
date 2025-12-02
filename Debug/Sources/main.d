@@ -7,9 +7,11 @@ Sources/main.obj: C:/ti/ccs1281/ccs/ccs_base/msp430/include/in430.h
 Sources/main.obj: C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics.h
 Sources/main.obj: C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics_legacy_undefs.h
 Sources/main.obj: ../base.h
+Sources/main.obj: ../Sources/Handler.h
 Sources/main.obj: ../Sources/event.h
 Sources/main.obj: ../Sources/TA0.h
 Sources/main.obj: ../Sources/TA1.h
+Sources/main.obj: ../Sources/UCA1.h
 
 ../Sources/main.c:
 
@@ -25,9 +27,13 @@ C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics_leg
 
 ../base.h:
 
+../Sources/Handler.h:
+
 ../Sources/event.h:
 
 ../Sources/TA0.h:
 
 ../Sources/TA1.h:
+
+../Sources/UCA1.h:
 

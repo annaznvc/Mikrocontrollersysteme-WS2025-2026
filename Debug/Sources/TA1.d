@@ -9,6 +9,7 @@ Sources/TA1.obj: C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/inclu
 Sources/TA1.obj: ../base.h
 Sources/TA1.obj: ../Sources/TA1.h
 Sources/TA1.obj: ../Sources/event.h
+Sources/TA1.obj: ../Sources/TA0.h
 
 ../Sources/TA1.c:
 
@@ -27,4 +28,6 @@ C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics_leg
 ../Sources/TA1.h:
 
 ../Sources/event.h:
+
+../Sources/TA0.h:
 

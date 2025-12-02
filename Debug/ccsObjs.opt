@@ -1,5 +1,7 @@
+"./Sources/Handler.obj"
 "./Sources/TA0.obj"
 "./Sources/TA1.obj"
+"./Sources/UCA1.obj"
 "./Sources/event.obj"
 "./Sources/main.obj"
 "../Sources/lnk_msp430fr5729.cmd"
