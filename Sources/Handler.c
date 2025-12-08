@@ -8,39 +8,43 @@ static UChar digi[DIGISIZE];
 static UChar index;
 static Bool is_decrement;
 
-
 // ----------------------------------------------------------------------------
-// Statt struct: Einzelne Variablen zur Speicherersparnis
+// State Machine fï¿½r Display
 typedef enum { STATE_IDLE = 0, STATE_SEND } TState;
 TState display_state;
 static UChar display_pos;
 static UChar display_cnt;
 
 // ----------------------------------------------------------------------------
+// State Machine fï¿½r Number Processing (ersetzt while-Schleifen)
+typedef enum { 
+    STATE_NUM_IDLE = 0, 
+    STATE_NUM_PROCESSING 
+} TNumState;
+static TNumState num_state;
+static UChar num_pos;  // Aktuelle Position beim Verarbeiten
+
+// ----------------------------------------------------------------------------
+// Hilfsfunktion zur Behandlung eines Button-Events (reduziert Code-Duplikation)
+static void handle_digit_button(UChar event, UChar digit_index) {
+    if (Event_tst(event)) {
+        Event_clr(event);
+        index = digit_index;
+        Event_set(EVENT_UDIG);
+    }
+}
+
+// ----------------------------------------------------------------------------
 
 void Button_Handler(void) {
+    // Digit-Buttons: BTN3=0, BTN4=1, BTN5=2, BTN6=3
+    handle_digit_button(EVENT_BTN3, 0);
+    handle_digit_button(EVENT_BTN4, 1);
+    handle_digit_button(EVENT_BTN5, 2);
+    handle_digit_button(EVENT_BTN6, 3);
 
-    if (Event_tst(EVENT_BTN3)) {
-        Event_clr(EVENT_BTN3);
-        index = 0;
-        Event_set(EVENT_UDIG);
-    }
-    if (Event_tst(EVENT_BTN4)) {
-        Event_clr(EVENT_BTN4);
-        index = 1;
-        Event_set(EVENT_UDIG);
-    }
-    if (Event_tst(EVENT_BTN5)) {
-        Event_clr(EVENT_BTN5);
-        index = 2;
-        Event_set(EVENT_UDIG);
-    }
-    if (Event_tst(EVENT_BTN6)) {
-        Event_clr(EVENT_BTN6);
-        index = 3;
-        Event_set(EVENT_UDIG);
-    }
-
+    // Modus-Toggle: BTN1 steuert Increment/Decrement (wird in main.c behandelt)
+    // Hier nur den aktuellen Zustand auslesen
     if(TSTBIT(P2OUT, BIT7)) {
         is_decrement = FALSE;
     } else {
@@ -48,58 +52,56 @@ void Button_Handler(void) {
     }
 }
 
-// *** Rekursion entfernt – effizienter für Stack ***
-/*void change_digit(unsigned char pos) {
-    while (pos < DIGISIZE) {
-        if (is_decrement) {
-            if (digi[pos] == 0) {
-                digi[pos] = NUMBASE - 1;
-                pos++;
-            } else {
-                digi[pos]--;
-                break;
-            }
-        } else {
-            digi[pos]++;
-            if (digi[pos] >= NUMBASE) {
-                digi[pos] = 0;
-                pos++;
-            } else {
-                break;
-            }
-        }
-    }
-}*/
-
 // ----------------------------------------------------------------------------
+// State Machine basierte Implementierung - keine while-Schleifen, keine Rekursion
 
 void Number_Handler(void) {
-    if (Event_tst(EVENT_UDIG)){
+    // Start der Verarbeitung (nur wenn im IDLE-Zustand)
+    if (Event_tst(EVENT_UDIG)) {
         Event_clr(EVENT_UDIG);
-
-
-        UInt idx = index;
-        if(is_decrement) {
-            while (idx < DIGISIZE){
-                digi[idx]++;
-                if (digi[idx] < NUMBASE){
-                    break;
-                }
-                digi[idx] = 0;
-                idx++;
-            }
-        }else {
-            while (idx < DIGISIZE) {
-                if (digi[idx] > 0) {
-                    digi[idx]--;
-                    break;
-                }else {
-                    digi[idx] = NUMBASE-1;
-                    idx++;
-                }
-            }
+        if (num_state == STATE_NUM_IDLE) {
+            num_state = STATE_NUM_PROCESSING;
+            num_pos = index;
         }
-        Event_set(EVENT_7SEG);
+    }
+    
+    // State Machine: Schrittweise Verarbeitung (ein Schritt pro Aufruf)
+    if (num_state == STATE_NUM_PROCESSING) {
+        if (num_pos < DIGISIZE) {
+            if (is_decrement) {
+                // Decrement: Ziffer verringern
+                if (digi[num_pos] > 0) {
+                    digi[num_pos]--;
+                    // Kein Unterlauf -> fertig
+                    num_state = STATE_NUM_IDLE;
+                    Event_set(EVENT_7SEG);
+                } else {
+                    // Unterlauf -> nï¿½chste Position
+                    digi[num_pos] = NUMBASE - 1;
+                    num_pos++;
+                    // Event setzen fï¿½r Weiterverarbeitung
+                    Event_set(EVENT_UDIG);
+                }
+            } else {
+                // Increment: Ziffer erhï¿½hen
+                digi[num_pos]++;
+                if (digi[num_pos] < NUMBASE) {
+                    // Kein ï¿½berlauf -> fertig
+                    num_state = STATE_NUM_IDLE;
+                    Event_set(EVENT_7SEG);
+                } else {
+                    // ï¿½berlauf -> nï¿½chste Position
+                    digi[num_pos] = 0;
+                    num_pos++;
+                    // Event setzen fï¿½r Weiterverarbeitung
+                    Event_set(EVENT_UDIG);
+                }
+            }
+        } else {
+            // Alle Positionen verarbeitet
+            num_state = STATE_NUM_IDLE;
+            Event_set(EVENT_7SEG);
+        }
     }
 }
 
@@ -134,5 +136,7 @@ void Handler_init(void) {
     display_state = STATE_IDLE;
     display_pos = 0;
     display_cnt = 0;
+    num_state = STATE_NUM_IDLE;
+    num_pos = 0;
     CLRBIT(P1OUT, BIT0); // LED AUS (INKREMENT-Modus)
 }
