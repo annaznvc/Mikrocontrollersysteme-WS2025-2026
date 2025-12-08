@@ -104,7 +104,7 @@ GLOBAL Int UCA1_emit(const UInt adr, const UInt val, const UInt msg) {
    uca1.adr   = adr;
    uca1.val   = val;
    uca1.msg   = msg;
-   SETBIT(UCA1IFG, UCRXIFG);
+   SETBIT(UCA1IFG, UCRXIFG); //löst sofort interrupt aus und ruft state0 auf
    return 0;
 }
 

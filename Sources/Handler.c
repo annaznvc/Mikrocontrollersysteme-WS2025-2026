@@ -3,24 +3,18 @@
 #include "event.h"
 #include "UCA1.h"
 
-// *** Speicheroptimiert: unsigned char statt UInt ***
-static UChar digi[DIGISIZE];
-static UChar index;
+static UChar digi[DIGISIZE]; //Einer, Zehner, Hunderter, Tausender
+static UChar index; //index fï¿½r digi
 static Bool is_decrement;
 
-// ----------------------------------------------------------------------------
-// State Machine für Display
-typedef enum { STATE_IDLE = 0, STATE_SEND } TState;
-TState display_state;
+// State Machine fï¿½r Display
+typedef enum { STATE_IDLE, STATE_SEND } TState; //idle = display bleibt unverï¿½ndert, send = zahl auf display aktualisiert sich
+static TState display_state;
 static UChar display_pos;
-static UChar display_cnt;
+static UChar display_cnt; //?????????
 
-// ----------------------------------------------------------------------------
-// State Machine für Number Processing (ersetzt while-Schleifen)
-typedef enum { 
-    STATE_NUM_IDLE = 0, 
-    STATE_NUM_PROCESSING 
-} TNumState;
+// State Machine fï¿½r Number Processing (ersetzt Schleifen)
+typedef enum { STATE_NUM_IDLE, STATE_NUM_PROCESSING } TNumState;
 static TNumState num_state;
 static UChar num_pos;  // Aktuelle Position beim Verarbeiten
 
@@ -29,22 +23,19 @@ static UChar num_pos;  // Aktuelle Position beim Verarbeiten
 static void handle_digit_button(UChar event, UChar digit_index) {
     if (Event_tst(event)) {
         Event_clr(event);
-        index = digit_index;
+        index = digit_index; //Welche Stelle soll geï¿½ndert werden?
         Event_set(EVENT_UDIG);
     }
 }
 
-// ----------------------------------------------------------------------------
-
 GLOBAL Void Button_Handler(Void) {
-    // Digit-Buttons: BTN3=0, BTN4=1, BTN5=2, BTN6=3
+    //Fï¿½r jeden Button prï¿½fen, ob er gedrï¿½ckt wurde
     handle_digit_button(EVENT_BTN3, 0);
     handle_digit_button(EVENT_BTN4, 1);
     handle_digit_button(EVENT_BTN5, 2);
     handle_digit_button(EVENT_BTN6, 3);
 
-    // Modus-Toggle: BTN1 steuert Increment/Decrement (wird in main.c behandelt)
-    // Hier nur den aktuellen Zustand auslesen
+    //BTN1 steuert Increment/Decrement (wird in main.c behandelt), hier nur den aktuellen Zustand auslesen
     if(TSTBIT(P2OUT, BIT7)) {
         is_decrement = FALSE;
     } else {
@@ -53,7 +44,7 @@ GLOBAL Void Button_Handler(Void) {
 }
 
 // ----------------------------------------------------------------------------
-// State Machine basierte Implementierung - keine while-Schleifen, keine Rekursion
+// State Machine basierte Implementierung, keine Schleifen oder Rekursion
 
 GLOBAL Void Number_Handler(Void) {
     // Start der Verarbeitung (nur wenn im IDLE-Zustand)
@@ -61,7 +52,7 @@ GLOBAL Void Number_Handler(Void) {
         Event_clr(EVENT_UDIG);
         if (num_state == STATE_NUM_IDLE) {
             num_state = STATE_NUM_PROCESSING;
-            num_pos = index;
+            num_pos = index; //num pos = wo sind wir JETZT grade im ï¿½bertragungsprozess? index = welche stelle wollte der nutzer ï¿½ndern? MIt dem Index bestimmt der User, welche Stelle er ï¿½ndern will. Das darf man nicht eif so inkrementieren, denn wenn er z.B den selben button noch mal drï¿½ckt, wird ein anderer angesprochen
         }
     }
     
@@ -69,36 +60,29 @@ GLOBAL Void Number_Handler(Void) {
     if (num_state == STATE_NUM_PROCESSING) {
         if (num_pos < DIGISIZE) {
             if (is_decrement) {
-                // Decrement: Ziffer verringern
                 if (digi[num_pos] > 0) {
                     digi[num_pos]--;
-                    // Kein Unterlauf -> fertig
                     num_state = STATE_NUM_IDLE;
                     Event_set(EVENT_7SEG);
                 } else {
-                    // Unterlauf -> nächste Position
-                    digi[num_pos] = NUMBASE - 1;
-                    num_pos++;
-                    // Event setzen für Weiterverarbeitung
-                    Event_set(EVENT_UDIG);
+                    // Unterlauf, nï¿½chste Position
+                    digi[num_pos] = NUMBASE - 1; //10-1 = 9
+                    num_pos++; //eine stelle Weiter +1
+                    Event_set(EVENT_UDIG); //neue UDIG Aufrufe solange ï¿½berschlag gibt, bis man durch ist (Schleife umgangen)
                 }
             } else {
-                // Increment: Ziffer erhöhen
-                digi[num_pos]++;
+                digi[num_pos]++; //inkrementieren nicht an bedingung gebunden anders als bei dekrementierung wiel bei 0-- falsch 255 rauskommt (UChar)
                 if (digi[num_pos] < NUMBASE) {
-                    // Kein Überlauf -> fertig
                     num_state = STATE_NUM_IDLE;
                     Event_set(EVENT_7SEG);
                 } else {
-                    // Überlauf -> nächste Position
                     digi[num_pos] = 0;
                     num_pos++;
-                    // Event setzen für Weiterverarbeitung
                     Event_set(EVENT_UDIG);
                 }
             }
         } else {
-            // Alle Positionen verarbeitet
+            // Alle Positionen verarbeitet 0 bis 3, kein increment oder decrement der idle setzen kï¿½nnte, muss selbst gemacht werden am ende
             num_state = STATE_NUM_IDLE;
             Event_set(EVENT_7SEG);
         }
@@ -109,16 +93,16 @@ GLOBAL Void Number_Handler(Void) {
 
 GLOBAL Void Display_Handler(Void) {
 
-    if(Event_tst(EVENT_7SEG)){
+    if(Event_tst(EVENT_7SEG)){ //display muss aktualisiert werden
         Event_clr(EVENT_7SEG);
-        display_pos = 0;
-        Event_set(EVENT_SPIRDY);
+        display_pos = 0; //beim ersten digit starten
+        Event_set(EVENT_SPIRDY); //SPI darf erste ziffer senden
     }
     if (Event_tst(EVENT_SPIRDY)) {
         Event_clr(EVENT_SPIRDY);
-        if (display_pos < DIGISIZE){
-            UCA1_emit(DRVWREN + display_pos, digi[display_pos], EVENT_SPIRDY);
-            display_pos++;
+        if (display_pos < DIGISIZE){ //haben wir noch ziffern ï¿½brig?
+            UCA1_emit(DRVWREN + display_pos, digi[display_pos], EVENT_SPIRDY); //versand an display: aktuelle position + wert der ziffer + event spirdy erneut setzen
+            display_pos++; //gehe zur nï¿½chsten stelle im display
         }
     }
 
@@ -130,7 +114,7 @@ GLOBAL Void Display_Handler(Void) {
 GLOBAL inline Void Handler_init(Void) {
     unsigned char i = 0;
     while (i < DIGISIZE) {
-        digi[i] = 0;
+        digi[i] = 0; //setze alle ziffern auf 0
         i++;
     }
     is_decrement = FALSE;

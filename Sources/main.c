@@ -103,12 +103,6 @@ GLOBAL Void main(Void) {
       if (Event_tst(EVENT_BTN1)) {
          Event_clr(EVENT_BTN1);
          TGLBIT(P2OUT, BIT7);
-         /*is_decrement = !is_decrement;
-         if (is_decrement) {
-             SETBIT(P1OUT, BIT0);  // LED an
-         } else {
-             CLRBIT(P1OUT, BIT0);  // LED aus
-         }*/
       }
 
       // wenn die drei Handler korrekt implementiert sind,
