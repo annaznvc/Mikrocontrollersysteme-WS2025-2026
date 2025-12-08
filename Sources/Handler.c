@@ -36,7 +36,7 @@ static void handle_digit_button(UChar event, UChar digit_index) {
 
 // ----------------------------------------------------------------------------
 
-void Button_Handler(void) {
+GLOBAL Void Button_Handler(Void) {
     // Digit-Buttons: BTN3=0, BTN4=1, BTN5=2, BTN6=3
     handle_digit_button(EVENT_BTN3, 0);
     handle_digit_button(EVENT_BTN4, 1);
@@ -55,7 +55,7 @@ void Button_Handler(void) {
 // ----------------------------------------------------------------------------
 // State Machine basierte Implementierung - keine while-Schleifen, keine Rekursion
 
-void Number_Handler(void) {
+GLOBAL Void Number_Handler(Void) {
     // Start der Verarbeitung (nur wenn im IDLE-Zustand)
     if (Event_tst(EVENT_UDIG)) {
         Event_clr(EVENT_UDIG);
@@ -107,7 +107,7 @@ void Number_Handler(void) {
 
 // ----------------------------------------------------------------------------
 
-void Display_Handler(void) {
+GLOBAL Void Display_Handler(Void) {
 
     if(Event_tst(EVENT_7SEG)){
         Event_clr(EVENT_7SEG);
@@ -126,7 +126,8 @@ void Display_Handler(void) {
 
 // ----------------------------------------------------------------------------
 
-void Handler_init(void) {
+#pragma FUNC_ALWAYS_INLINE(Handler_init)
+GLOBAL inline Void Handler_init(Void) {
     unsigned char i = 0;
     while (i < DIGISIZE) {
         digi[i] = 0;
