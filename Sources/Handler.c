@@ -9,14 +9,14 @@ static UChar index;
 static Bool is_decrement;
 
 // ----------------------------------------------------------------------------
-// State Machine fï¿½r Display
+// State Machine für Display
 typedef enum { STATE_IDLE = 0, STATE_SEND } TState;
 TState display_state;
 static UChar display_pos;
 static UChar display_cnt;
 
 // ----------------------------------------------------------------------------
-// State Machine fï¿½r Number Processing (ersetzt while-Schleifen)
+// State Machine für Number Processing (ersetzt while-Schleifen)
 typedef enum { 
     STATE_NUM_IDLE = 0, 
     STATE_NUM_PROCESSING 
@@ -76,24 +76,24 @@ void Number_Handler(void) {
                     num_state = STATE_NUM_IDLE;
                     Event_set(EVENT_7SEG);
                 } else {
-                    // Unterlauf -> nï¿½chste Position
+                    // Unterlauf -> nächste Position
                     digi[num_pos] = NUMBASE - 1;
                     num_pos++;
-                    // Event setzen fï¿½r Weiterverarbeitung
+                    // Event setzen für Weiterverarbeitung
                     Event_set(EVENT_UDIG);
                 }
             } else {
-                // Increment: Ziffer erhï¿½hen
+                // Increment: Ziffer erhöhen
                 digi[num_pos]++;
                 if (digi[num_pos] < NUMBASE) {
-                    // Kein ï¿½berlauf -> fertig
+                    // Kein Überlauf -> fertig
                     num_state = STATE_NUM_IDLE;
                     Event_set(EVENT_7SEG);
                 } else {
-                    // ï¿½berlauf -> nï¿½chste Position
+                    // Überlauf -> nächste Position
                     digi[num_pos] = 0;
                     num_pos++;
-                    // Event setzen fï¿½r Weiterverarbeitung
+                    // Event setzen für Weiterverarbeitung
                     Event_set(EVENT_UDIG);
                 }
             }
