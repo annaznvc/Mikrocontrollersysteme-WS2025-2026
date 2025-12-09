@@ -4,19 +4,18 @@
 #include "UCA1.h"
 
 static UChar digi[DIGISIZE]; //Einer, Zehner, Hunderter, Tausender
-static UChar index; //index fï¿½r digi
+static UChar index;
 static Bool is_decrement;
 
 // State Machine fï¿½r Display
 typedef enum { STATE_IDLE, STATE_SEND } TState; //idle = display bleibt unverï¿½ndert, send = zahl auf display aktualisiert sich
 static TState display_state;
 static UChar display_pos;
-static UChar display_cnt; //?????????
 
 // State Machine fï¿½r Number Processing (ersetzt Schleifen)
 typedef enum { STATE_NUM_IDLE, STATE_NUM_PROCESSING } TNumState;
 static TNumState num_state;
-static UChar num_pos;  // Aktuelle Position beim Verarbeiten
+static UChar num_pos;
 
 // ----------------------------------------------------------------------------
 // Hilfsfunktion zur Behandlung eines Button-Events (reduziert Code-Duplikation)
@@ -27,7 +26,7 @@ static void handle_digit_button(UChar event, UChar digit_index) {
         Event_set(EVENT_UDIG);
     }
 }
-
+// sammelt Button Events und merkt sich, welche stelle verändert werden soll und ob dekrementiert wird
 GLOBAL Void Button_Handler(Void) {
     //Fï¿½r jeden Button prï¿½fen, ob er gedrï¿½ckt wurde
     handle_digit_button(EVENT_BTN3, 0);
@@ -37,22 +36,21 @@ GLOBAL Void Button_Handler(Void) {
 
     //BTN1 steuert Increment/Decrement (wird in main.c behandelt), hier nur den aktuellen Zustand auslesen
     if(TSTBIT(P2OUT, BIT7)) {
-        is_decrement = FALSE;
-    } else {
         is_decrement = TRUE;
+    } else {
+        is_decrement = FALSE;
     }
 }
 
 // ----------------------------------------------------------------------------
-// State Machine basierte Implementierung, keine Schleifen oder Rekursion
+// Führt Inkrementier und Dekrementier Logik aus mit Carry, Borrows
 
 GLOBAL Void Number_Handler(Void) {
-    // Start der Verarbeitung (nur wenn im IDLE-Zustand)
     if (Event_tst(EVENT_UDIG)) {
         Event_clr(EVENT_UDIG);
         if (num_state == STATE_NUM_IDLE) {
             num_state = STATE_NUM_PROCESSING;
-            num_pos = index; //num pos = wo sind wir JETZT grade im ï¿½bertragungsprozess? index = welche stelle wollte der nutzer ï¿½ndern? MIt dem Index bestimmt der User, welche Stelle er ï¿½ndern will. Das darf man nicht eif so inkrementieren, denn wenn er z.B den selben button noch mal drï¿½ckt, wird ein anderer angesprochen
+            num_pos = index;
         }
     }
     
@@ -90,7 +88,7 @@ GLOBAL Void Number_Handler(Void) {
 }
 
 // ----------------------------------------------------------------------------
-
+//sendet die 4 stellen nacheinander per spi ans display
 GLOBAL Void Display_Handler(Void) {
 
     if(Event_tst(EVENT_7SEG)){ //display muss aktualisiert werden
@@ -120,7 +118,6 @@ GLOBAL inline Void Handler_init(Void) {
     is_decrement = FALSE;
     display_state = STATE_IDLE;
     display_pos = 0;
-    display_cnt = 0;
     num_state = STATE_NUM_IDLE;
     num_pos = 0;
     CLRBIT(P1OUT, BIT0); // LED AUS (INKREMENT-Modus)
