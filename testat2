@@ -17,8 +17,8 @@ EXTERN inline Int getTemp(Void); //aus Temperatur sensor auslesen
 EXTERN Int TmpAvr; //resultat des arith.Mit.
 
 // Deklarationsbereich für lokale Daten/Variablen
-static Int sum;
-static Int count;
+LOCAL Int sum;
+LOCAL Int count;
 
 
 GLOBAL inline void TA1_init(Void){
