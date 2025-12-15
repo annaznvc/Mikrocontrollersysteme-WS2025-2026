@@ -1,0 +1,54 @@
+//**
+// Mit Hilfe des Mikrocontrollers Msp430 soll der arithmetische Mittelwert von 20 Temperaturmesswerten berechnet werden. 
+// Die Berechnung des arithmetischen Mittelwerts findet in der Interrupt-Service-Routine des Timers TA1 statt. 
+// Der Timer TA1 ist so konfiguriert, dass er in zeitlichen Abständen von 10 ms ein Interrupt auslöst und die dazugehörige ISR ausführt. 
+// Bei jedem Aufruf der ISR wird ein einzelner Temperaturmesswert mit der Funktion getTemp() aus einem Temperatursensor ausgelesen. 
+// Temperaturmesswerte liegen zws -40 und +120 Grad mit einer Auflsung von 1 Grad. 
+// Das Resultat aus der Berechnung des airthmetischern Mittelwerts soll einem Handler in der globalen Varibale namens TmpAvr bereitgestellt 
+// werden. Bei der Fertigstellung soll auch das Event EVENT_TEMP gesetzt werden, so dass der Handler den Wert weiterverarbeiten kann. 
+// Im Rahmen dieser Aufgabe sollen Sie ein funktionsfähiges Programmfragment in C schreiben, 
+// in dem eine Timer-gesteuerte Berechnung des arithmetischen Mittelwerts möglich ist. 
+// Dazu deklarieren Sie lokale Daten/Variablen, initialisieren diese mit geeigneten Anfangswerten und erweitern die ISR. 
+// Wir gehen davon aus, dass der Timer bereits konfiguriert ist. Somit ist die Konfiguration des Timers kein Bestandteil der Aufgabe.
+//  */
+
+#define LEN (20)
+EXTERN inline Int getTemp(Void); //aus Temperatur sensor auslesen
+EXTERN Int TmpAvr; //resultat des arith.Mit.
+
+// Deklarationsbereich für lokale Daten/Variablen
+static Int sum;
+static Int count;
+
+
+GLOBAL inline void TA1_init(Void){
+    sum = 0;
+    count = 0;
+
+    // Timer TA1 wird hier initalisiert....
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------------------
+
+
+//zusätzlich eingefügt von mir selbst : 
+
+#pragma vector = TIMER1_A1_VECTOR
+__interrupt Void TIMER1_A1_ISR(Void) {
+    CLRBIT(TA1CTL, TAIFG);
+
+   sum += getTemp();
+    count++;
+
+    if (count == LEN){
+
+        TmpAvr = sum / LEN;
+        Event_set(EVENT_TEMP);
+
+        sum = 0;
+        count = 0;
+    }
+
+    __low_power_mode_off_on_exit();
+
+}
